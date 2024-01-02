@@ -9,7 +9,7 @@ start.sh使用了多进程的方法，在se7盒子上可以同时检测多个视
 
 # 运行环境和方法
 
-1，准备已经配置好环境的se7盒子
+1，准备已经配置好环境的se7盒子 \n
 2，运行命令把代码复制进入盒子
 scp yolov5_bmcv.py linaro@192.168.31.50:/data/sophon-demo/sample/YOLOv5/python/
 scp start.sh linaro@192.168.31.50:/data/sophon-demo/sample/YOLOv5/python/
