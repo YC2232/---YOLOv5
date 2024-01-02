@@ -1,10 +1,5 @@
 # ===----------------------------------------------------------------------===#
-#
-# Copyright (C) 2022 Sophgo Technologies Inc.  All rights reserved.
-#
-# SOPHON-DEMO is licensed under the 2-Clause BSD License except for the
-# third-party components.
-#
+# 由算丰官方例子改写
 # ===----------------------------------------------------------------------===#
 import os
 import time
@@ -20,9 +15,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-
-# sail.set_print_flag(1)
-
+#定义YOLOv5模型
 class YOLOv5:
     def __init__(self, bmodel_path, dev_id):
         # load bmodel
@@ -239,6 +232,7 @@ class YOLOv5:
 
         return results
 
+#请求视频流的URL
 def get_rtsp_stream_url(url, channel_code, stream_type=0):
     payload = json.dumps({
         "channelCode": channel_code,
@@ -261,20 +255,21 @@ def get_rtsp_stream_url(url, channel_code, stream_type=0):
         return None
 
 
+#模型yolov5s_v6.1_3output_fp32_1b.bmodel对应的方法
 def draw_bmcv_car(bmcv, bmimg, boxes, classes_ids=None, conf_scores=None, save_path=""):
 
     CUSTOM_CLASS = "Car"
 
+    #sail.BMImage和numpyarray的格式转换
     if isinstance(bmimg, sail.BMImage):
         img_bgr_planar = bmimg.asmat()  # Convert BMImage to NumPy array
     else:
         img_bgr_planar = bmimg  # Already a NumPy array
 
-
+    #可以在此实现检测后的业务逻辑
     for idx in range(len(boxes)):
         # TODO
         x1, y1, x2, y2 = boxes[idx, :].astype(np.int32).tolist()
-        score = conf_scores[idx]
         # 如果置信度小于0.25，则跳过该检测
         if conf_scores[idx]  < 0.25:
             continue
@@ -283,9 +278,6 @@ def draw_bmcv_car(bmcv, bmimg, boxes, classes_ids=None, conf_scores=None, save_p
         class_id = int(classes_ids[idx])
         #detect car
         if class_id==2:
-            color = np.array(COLORS[class_id % len(COLORS)]).astype(np.uint8).tolist()
-            label = f'{CUSTOM_CLASS}:{score:.2f}'
-
             # Use OpenCV to draw rectangle and text
             cv2.rectangle(img_bgr_planar, (x1, y1), (x2, y2), [0,0,255], 3)
             cv2.putText(img_bgr_planar, "model 2 : Car", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, [0,0,255], 3)
@@ -294,19 +286,17 @@ def draw_bmcv_car(bmcv, bmimg, boxes, classes_ids=None, conf_scores=None, save_p
     return img_bgr_planar
 
 
-
+#yolov5s_v6.1_3output_fp32_1b_extinguisher.bmodel模型所对应方法
 def draw_bmcv_extinguisher(bmcv, bmimg, boxes, classes_ids=None, conf_scores=None, save_path=""):
     CUSTOM_CLASS = "Extinguisher"
-    thickness = 2
-    text_thickness = 1
-    font_scale = 0.5
 
+    # sail.BMImage和numpyarray的格式转换
     if isinstance(bmimg, sail.BMImage):
         img_bgr_planar = bmimg.asmat()  # Convert BMImage to NumPy array
     else:
         img_bgr_planar = bmimg  # Already a NumPy array
 
-
+    # 可以在此实现检测后的业务逻辑
     for idx in range(len(boxes)):
         #TODO
         x1, y1, x2, y2 = boxes[idx, :].astype(np.int32).tolist()
@@ -314,13 +304,8 @@ def draw_bmcv_extinguisher(bmcv, bmimg, boxes, classes_ids=None, conf_scores=Non
         # 如果置信度小于0.25，则跳过该检测
         if conf_scores[idx]  < 0.25:
             continue
-
-
         class_id = int(classes_ids[idx])
         #detect car
-
-        color = np.array(COLORS[class_id % len(COLORS)]).astype(np.uint8).tolist()
-        label = f'{CUSTOM_CLASS}:{score:.2f}'
 
         # Use OpenCV to draw rectangle and text
         cv2.rectangle(img_bgr_planar, (x1, y1), (x2, y2), [255,0,0], 3)
@@ -333,7 +318,6 @@ def draw_bmcv_extinguisher(bmcv, bmimg, boxes, classes_ids=None, conf_scores=Non
 def main(args):
 
     #request video url
-
     stream_url=get_rtsp_stream_url(args.url,args.channelCode)
 
     # creat save path
@@ -355,28 +339,31 @@ def main(args):
     # 为每个模型找到对应的绘图函数
     draw_functions = [model_to_draw_function_map[model.name] for model in models]
 
+    #定义每一次处理的数量
     batch_size = models[0].batch_size
 
+    #初始化Bmcv工具
     handle = sail.Handle(args.dev_id)
     bmcv = sail.Bmcv(handle)
 
     decode_time = 0.0
 
+    #初始化解码器，使用方法见sophon-sail 使用手册
     decoder = sail.MultiDecoder(10, 0, 0)
     ch_idx = decoder.add_channel(stream_url, 0)
 
+    #定义输出路径和打印
     video_name = os.path.splitext(os.path.split(stream_url)[1])[0]
-
     save_video_path = os.path.join(output_dir, video_name + '_processed.avi')
     print("-------------------------------------------------")
     print("saved in ",save_video_path)
     print("-------------------------------------------------")
-    #Acquire video data dynamically
+
+    #Acquire video data dynamically and define video format
     cap = cv2.VideoCapture(stream_url)
     fps = cap.get(cv2.CAP_PROP_FPS)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
     fourcc = cv2.VideoWriter_fourcc(*'avc1')
     out_video = cv2.VideoWriter(save_video_path, fourcc,fps, (width, height))
 
@@ -386,6 +373,8 @@ def main(args):
     while not end_flag:
         frame = sail.BMImage()
         start_time = time.time()
+
+        #读出视频帧
         frame = decoder.read(ch_idx)
         decode_time += time.time() - start_time
         ret = False
@@ -394,13 +383,18 @@ def main(args):
             print(222)
         else:
             frame_list.append(frame)
+
+        # 如果已收集足够的帧或达到视频末尾，开始处理
         if (len(frame_list) == batch_size or end_flag) and len(frame_list):
 
+            # 获取帧列表中的第一个帧作为初始处理对象
             if len(frame_list) > 0:
                 bmcv1 = frame_list[0]
 
             for model_index, model in enumerate(models):
+                # 对每个模型应用目标检测
                 results = model(frame_list)
+                # 获取对应模型的绘图函数
                 draw_func = draw_functions[model_index]
 
                 for i, frame in enumerate(frame_list):
@@ -409,13 +403,13 @@ def main(args):
                     logging.info("{}, det nums: {}".format(cn, det.shape[0]))
                     save_path = os.path.join(output_img_dir, video_name + '_' + str(cn) + '.jpg')
 
-                    # 更新 bmcv1
+                    # 使用绘图函数在帧上绘制检测结果，并更新 bmcv1
                     bmcv1 = draw_func(bmcv, bmcv1, det[:, :4], classes_ids=det[:, -1], conf_scores=det[:, -2],
                                       save_path=save_path)
 
             if isinstance(bmcv1, sail.BMImage):
                 res = bmcv1.asmat()# Convert BMImage to NumPy array
-                out_video.write(res)
+                out_video.write(res) # 将处理后的帧写入视频文件
             else:
                 out_video.write(bmcv1)
 
@@ -426,7 +420,7 @@ def main(args):
     out_video.release()
     logging.info("result saved in {}".format(output_img_dir))
 
-
+#定义参数
 def argsparser():
     parser = argparse.ArgumentParser(prog=__file__)
     parser.add_argument('--input', type=str, default='../datasets/test', help='path of input')
