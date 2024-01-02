@@ -22,8 +22,11 @@ cd /data/sophon-demo/sample/YOLOv5
 chmod +x python/start.sh  
 6，运行代码  
 ./python/start.sh  
-
-
+7，等待1min  
+8，在开始的地方查看视频保存路径  
+![image](https://github.com/YC2232/se7-micro-server-running-YOLOv5/assets/143778084/2b1ebdc9-89c6-4e98-967f-d727e838e2e3)  
+9，把视频从盒子复制到本机上  
+scp linaro@192.168.31.50:/data/sophon-demo/sample/YOLOv5/results/[你跑出来的结果] C:\Users\28482\Desktop\video-stream\test  
 
 
 
