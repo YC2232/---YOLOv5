@@ -18,6 +18,7 @@ yolov5s_v6.1_3output_fp32_1b_extinguisher.bmodel是量化后的检测灭火器�
 2，运行命令把代码复制进入盒子  
 scp yolov5_bmcv.py linaro@192.168.31.50:/data/sophon-demo/sample/YOLOv5/python/  
 scp start.sh linaro@192.168.31.50:/data/sophon-demo/sample/YOLOv5/python/  
+scp yolov5s_v6.1_3output_fp32_1b_extinguisher.bmodel linaro@192.168.31.50:/data/sophon-demo/sample/YOLOv5/models/BM1684X  
 3，进入盒子  
 ssh linaro@192.168.31.50  
 4，进入路径  
